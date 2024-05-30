@@ -1,0 +1,149 @@
+---
+title: "Neuro Processing"
+output:
+  word_document: default
+  html_document: default
+date: "2024-05-08"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(mosaic)
+library(plyr)
+library(forcats)
+library(ggsignif)
+testing_overall <- read.csv("Documents/Testing_Overall.csv")
+testing_asymmetry <- read.csv("Downloads/ln_testing_asymmetry - testing_asymmetry.csv")
+learning_overall <- read.csv("Documents/Learning_Overall.csv")
+learning_asymmetry <- read.csv("Downloads/ln_learning_asymmetry - learning_asymmetry.csv")
+```
+
+```{r, echo=FALSE}
+"Testing Overall"
+to_anova <- aov(Values~Power*audio, data=testing_overall)
+summary(to_anova)
+"Testing Asymmetry"
+ta_anova <- aov(Values~Power*Audio, data=testing_asymmetry)
+summary(ta_anova)
+TukeyHSD(ta_anova, conf.level=.95)
+"Learning Overall"
+lo_anova <- aov(Delta~Powers*audio, data=learning_overall)
+summary(lo_anova)
+"Learning Asymmetry"
+la_anova <- aov(Values~Power*Audio, data=learning_asymmetry)
+summary(la_anova)
+TukeyHSD(la_anova, conf.level=.95)
+```
+
+```{r, echo=FALSE}
+data_summary <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE), n = length(x[[col]]))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+ return(data_sum)
+}
+to <- data_summary(testing_overall, varname="Values", 
+                    groupnames=c("Power", "audio"))
+to$audio <- factor(to$audio, c("WN", "MJ", "MN"))
+top<- to %>%
+  mutate(Power = fct_relevel(Power, "Delta", "Theta", "Alpha", "Beta", "Gamma")) %>%
+  ggplot(aes(x=Power, y=Values, fill=audio)) +
+  geom_bar(stat="identity", color="black", position=position_dodge()) +
+  theme_bw() +
+  geom_hline(yintercept=0, color="black") +
+  geom_errorbar(aes(ymin=Values-sd/sqrt(n), ymax=Values+sd/sqrt(n)), width=.2, position=position_dodge(.9)) +
+  labs(y="Normalized PSD", x="Frequencies", fill="Audio") +
+  scale_fill_manual(breaks = c("WN", "MJ", "MN"), labels = c("White Noise", "Major Chord Progressions", "Minor Chord Progressions"), values = c("#fb8b24", "#ff5964","#f5d547")) +
+  theme(text=element_text(size=30, family="Times New Roman"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+top
+
+```
+
+```{r, echo=FALSE}
+data_summaryta <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE), n=length(x[[col]]))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+ return(data_sum)
+}
+ta <- data_summaryta(testing_asymmetry, varname="Values", 
+                    groupnames=c("Power", "Audio"))
+ta$audio <- factor(ta$Audio, c("WN", "MJ", "MN"))
+tap <- ta %>%
+  mutate(Power = fct_relevel(Power, "Delta", "Theta", "Alpha", "Beta", "Gamma")) %>%
+  ggplot(aes(x=Power, y=Values, fill=Audio)) +
+  geom_bar(stat="identity", color="black", position=position_dodge()) +
+  theme_bw() +
+  geom_hline(yintercept=0, color="black") +
+  geom_errorbar(aes(ymin=Values-sd/sqrt(n), ymax=Values+sd/sqrt(n)), width=.2, position=position_dodge(.9)) +
+  labs(y="Normalized ln(F4/F3)", x="Frequencies", fill="Audio") +
+  scale_fill_manual(labels = c("White Noise", "Major Chord Progressions", "Minor Chord Progressions"), values = c("#fb8b24", "#ff5964","#f5d547")) +
+  theme(text=element_text(size=30, family="Times New Roman"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+tap
+```
+
+```{r, echo=FALSE}
+data_summarylo <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE), n=length(x[[col]]))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+ return(data_sum)
+}
+lo <- data_summarylo(learning_overall, varname="Delta", 
+                    groupnames=c("Powers", "audio"))
+lo$audio <- factor(lo$audio, c("WN", "MJ", "MN"))
+lop<- lo %>%
+  mutate(Powers = fct_relevel(Powers, "Delta", "Theta", "Alpha", "Beta", "Gamma")) %>%
+  ggplot(aes(x=Powers, y=Delta, fill=audio)) +
+  theme_bw() +
+  geom_hline(yintercept=0, color="black") +
+  geom_bar(stat="identity", color="black", position=position_dodge()) +
+  geom_errorbar(aes(ymin=Delta-sd/sqrt(n), ymax=Delta+sd/sqrt(n)), width=.2, position=position_dodge(.9)) +
+  labs(y="Normalized PSD", x="Frequencies", fill="Audio") +
+  scale_fill_manual(labels = c("White Noise", "Major Chord Progressions", "Minor Chord Progressions"), values = c("#fb8b24", "#ff5964","#f5d547")) +
+  theme(text=element_text(size=30, family="Times New Roman"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+lop
+```
+
+```{r, echo=FALSE}
+data_summaryla <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE), n=length(x[[col]]))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+ return(data_sum)
+}
+la <- data_summaryla(learning_asymmetry, varname="Values", 
+                    groupnames=c("Power", "Audio"))
+la$Audio <- factor(la$Audio, c("WN", "MJ", "MN"))
+lap<- la %>%
+  mutate(Power = fct_relevel(Power, "Delta", "Theta", "Alpha", "Beta", "Gamma")) %>%
+  ggplot(aes(x=Power, y=Values, fill=Audio)) +
+  geom_bar(stat="identity", color="black", position=position_dodge()) +
+  theme_bw() +
+  geom_hline(yintercept=0, color="black") +
+  geom_errorbar(aes(ymin=Values-sd/sqrt(n), ymax=Values+sd/sqrt(n)), width=.2, position=position_dodge(.9)) +
+  labs(y="Normalized ln(F4/F3)", x="Frequencies", fill="Audio") +
+  scale_fill_manual(labels = c("White Noise", "Major Chord Progressions", "Minor Chord Progressions"), values = c("#fb8b24", "#ff5964","#f5d547")) +
+  theme(text=element_text(size=30, family="Times New Roman"), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+lap
+```
